@@ -1,10 +1,30 @@
+<?php
+
+require_once './classes/database.php';
+$db = new Database(
+  array(
+    "DB_HOST" => '80.211.194.23://home/hhdb.fdb',
+    "DB_USER" => 'sysdba',
+    "DB_PASS" => 'masterkey',
+    "DB_CHARSET" => "UTF-8",
+    "DB_ROLE" => null,
+  )
+);
+
+if (@isset($_GET['page']) && $_GET['page'] != '') {
+  $content = './pages/' . $_GET['page'] . '.php';
+} else {
+  $content = './pages/index.php';
+}
+?>
+
 <!DOCTYPE html>
 <html>
 
 <head>
   <meta charset="UTF-8">
   <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'>
-  <title>SestrApp</title>
+  <title>DiApp</title>
   <!-- Bootstrap 3.3.2 -->
   <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
   <!-- FontAwesome 4.3.0 -->
@@ -34,7 +54,7 @@
   <div class="wrapper">
     <header class="main-header">
       <!-- Logo -->
-      <a href="index.php" class="logo"><b>SestrApp</b></a>
+      <a href="index.php" class="logo"><b>DiApp</b></a>
       <!-- Header Navbar: style can be found in header.less -->
       <nav class="navbar navbar-static-top" role="navigation">
         <!-- Sidebar toggle button-->
@@ -134,9 +154,10 @@
               <i class="fa fa-dashboard"></i> <span>Dashboard</span> <i class="fa fa-angle-left pull-right"></i>
             </a>
             <ul class="treeview-menu">
-              <li class="active"><a href="index.html"><i class="fa fa-circle-o"></i>Values</a></li>
+              <li class="active"><a href="./index.php"><i class="fa fa-circle-o"></i>Values</a></li>
             </ul>
           </li>
+          <li><a href="./index.php?page=patients"><i class="fa fa-user"></i> Patients</a></li>
           <li><a href="documentation/index.html"><i class="fa fa-book"></i> Documentation</a></li>
         </ul>
       </section>
@@ -145,118 +166,11 @@
 
     <!-- Right side column. Contains the navbar and content of the page -->
     <div class="content-wrapper">
-      <!-- Content Header (Page header) -->
-      <section class="content-header">
-        <h1>
-          Dashboard
-          <small>Patients values</small>
-        </h1>
-      </section>
-      <!-- Main content -->
-      <section class="content">
-        <!-- Small boxes (Stat box) -->
-        <div class="row">
-
-          <div class="col-lg-3 col-xs-6">
-            <!-- small box -->
-            <div class="small-box bg-yellow">
-              <div class="inner">
-                <h3>4.8 <small>mmol/L</small></h3>
-                <p>Nikdo Nikdovic<br />(Room 3 / Bed 2)</p>
-              </div>
-              <div class="icon">
-                <i class="ion ion-person-add"></i>
-              </div>
-            </div>
-          </div><!-- ./col -->
-          <div class="col-lg-3 col-xs-6">
-            <!-- small box -->
-            <div class="small-box bg-green">
-              <div class="inner">
-                <h3>3.2 <small>mmol/L</small></h3>
-                <p>Franta Voprsalek<br />(Room 2 / Bed 2)</p>
-              </div>
-              <div class="icon">
-                <i class="ion ion-person-add"></i>
-              </div>
-            </div>
-          </div><!-- ./col -->
-          <div class="col-lg-3 col-xs-6">
-            <!-- small box -->
-            <div class="small-box bg-green">
-              <div class="inner">
-                <h3>3.4 <small>mmol/L</small></h3>
-                <p>John Novak<br />(Room 3 / Bed 1)</p>
-              </div>
-              <div class="icon">
-                <i class="ion ion-person-add"></i>
-              </div>
-            </div>
-          </div><!-- ./col -->
-          <div class="col-lg-3 col-xs-6">
-            <!-- small box -->
-            <div class="small-box bg-red">
-              <div class="inner">
-                <h3>12.7 <small>mmol/L</small></h3>
-                <p>Martin Fejt<br />(Room 3 / Bed 3)</p>
-              </div>
-              <div class="icon">
-                <i class="ion ion-person-add"></i>
-              </div>
-            </div>
-          </div><!-- ./col -->
-        </div><!-- /.row -->
-        <div class="row">
-          <div class="col-lg-3 col-xs-6">
-            <!-- small box -->
-            <div class="small-box bg-red">
-              <div class="inner">
-                <h3>15.1 <small>mmol/L</small></h3>
-                <p>Testovic Novak<br />(Room 1 / Bed 4)</p>
-              </div>
-              <div class="icon">
-                <i class="ion ion-person-add"></i>
-              </div>
-            </div>
-          </div><!-- ./col -->
-          <div class="col-lg-3 col-xs-6">
-            <!-- small box -->
-            <div class="small-box bg-green">
-              <div class="inner">
-                <h3>2.9 <small>mmol/L</small></h3>
-                <p>Nikdo Nikdovic<br />(Room 4 / Bed 2)</p>
-              </div>
-              <div class="icon">
-                <i class="ion ion-person-add"></i>
-              </div>
-            </div>
-          </div><!-- ./col -->
-          <div class="col-lg-3 col-xs-6">
-            <!-- small box -->
-            <div class="small-box bg-yellow">
-              <div class="inner">
-                <h3>9.4 <small>mmol/L</small></h3>
-                <p>John Novak<br />(Room 4 / Bed 2)</p>
-              </div>
-              <div class="icon">
-                <i class="ion ion-person-add"></i>
-              </div>
-            </div>
-          </div><!-- ./col -->
-          <div class="col-lg-3 col-xs-6">
-            <!-- small box -->
-            <div class="small-box bg-green">
-              <div class="inner">
-                <h3>3.7 <small>mmol/L</small></h3>
-                <p>Test Testovic<br />(Room 1 / Bed 2)</p>
-              </div>
-              <div class="icon">
-                <i class="ion ion-person-add"></i>
-              </div>
-            </div>
-          </div><!-- ./col -->
-        </div><!-- /.row -->
-      </section><!-- /.content -->
+      <?php
+      if (@isset($content) && file_exists($content)) {
+        require_once $content;
+      }
+      ?>
     </div><!-- /.content-wrapper -->
     <footer class="main-footer">
       <div class="pull-right hidden-xs">
