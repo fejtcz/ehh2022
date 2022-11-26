@@ -21,4 +21,4 @@
 
 
 ## Projekt
-- Zprovoznit pristup, vytvorit pristupy a predat - Martin 
+- Virtual server s pristupy - Petr 
