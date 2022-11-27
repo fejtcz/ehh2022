@@ -1,0 +1,38 @@
+[
+    {
+        "pat_id": 123456,
+        "pat_first_name": "Jan",
+        "pat_second_name": "Novak",
+        "pat_room": 2,
+        "pat_bed": 1,
+        "pat_tx_sn": "AS34DS",
+        "pat_actual_glu": 4.3
+    },
+    {
+        "pat_id": 876425,
+        "pat_first_name": "John",
+        "pat_second_name": "Smith",
+        "pat_room": 5,
+        "pat_bed": 3,
+        "pat_tx_sn": "CQ34DS",
+        "pat_actual_glu": 3.5
+    },
+    {
+        "pat_id": 952097,
+        "pat_first_name": "Test",
+        "pat_second_name": "Testovic",
+        "pat_room": 1,
+        "pat_bed": 2,
+        "pat_tx_sn": "987GVD",
+        "pat_actual_glu": 9.6
+    },
+    {
+        "pat_id": 123123,
+        "pat_first_name": "Nobody",
+        "pat_second_name": "Nowhere",
+        "pat_room": 2,
+        "pat_bed": 4,
+        "pat_tx_sn": "127GVD",
+        "pat_actual_glu": 19.6
+    }
+]

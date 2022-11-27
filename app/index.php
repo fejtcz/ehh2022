@@ -1,16 +1,4 @@
 <?php
-
-require_once './classes/database.php';
-$db = new Database(
-  array(
-    "DB_HOST" => '80.211.194.23://home/hhdb.fdb',
-    "DB_USER" => 'sysdba',
-    "DB_PASS" => 'masterkey',
-    "DB_CHARSET" => "UTF-8",
-    "DB_ROLE" => null,
-  )
-);
-
 if (@isset($_GET['page']) && $_GET['page'] != '') {
   $content = './pages/' . $_GET['page'] . '.php';
 } else {
@@ -67,37 +55,20 @@ if (@isset($_GET['page']) && $_GET['page'] != '') {
             <li class="dropdown notifications-menu">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                 <i class="fa fa-bell-o"></i>
-                <span class="label label-warning">10</span>
+                <span class="label label-warning">2</span>
               </a>
               <ul class="dropdown-menu">
-                <li class="header">You have 10 notifications</li>
                 <li>
                   <!-- inner menu: contains the actual data -->
                   <ul class="menu">
                     <li>
                       <a href="#">
-                        <i class="fa fa-users text-aqua"></i> 5 new members joined today
+                        <i class="fa fa-warning text-yellow"></i> Patient Nobody Nowhere have hight glucose
                       </a>
                     </li>
                     <li>
                       <a href="#">
-                        <i class="fa fa-warning text-yellow"></i> Very long description here that may not fit into the page and may cause design problems
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#">
-                        <i class="fa fa-users text-red"></i> 5 new members joined
-                      </a>
-                    </li>
-
-                    <li>
-                      <a href="#">
-                        <i class="fa fa-shopping-cart text-green"></i> 25 sales made
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#">
-                        <i class="fa fa-user text-red"></i> You changed your username
+                        <i class="fa fa-user text-red"></i> The patient TX has not respond for a long time
                       </a>
                     </li>
                   </ul>
