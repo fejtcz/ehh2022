@@ -49,10 +49,10 @@ static BLEUUID        modelUUID("2A24"); // READ
 static BLEUUID     firmwareUUID("2A26"); // READ
 
 
-static std::string transmitterID = "8UGQFT";              /* Set here your transmitter ID */                            // This transmitter ID is used to identify our transmitter if multiple dexcom transmitters are found.
+static std::string transmitterID = "8UGQFT";              /* Set here your transmitter ID DexcomR5*/                            // This transmitter ID is used to identify our transmitter if multiple dexcom transmitters are found.
 static boolean useAlternativeChannel = true;      /* Enable when used concurrently with xDrip / Dexcom CGM */           // Tells the transmitter to use the alternative bt channel.
 static boolean bonding = false;                                                                                         // Gets set by Auth handshake "StatusRXMessage" and shows if the transmitter would like to bond with the client.
-static boolean force_rebonding = false;               /* Enable when problems with connecting */                        // When true: disables bonding before auth handshake. Enables bonding after successful authenticated (and before bonding command) so transmitter then can initiate bonding.
+static boolean force_rebonding = true;               /* Enable when problems with connecting */                        // When true: disables bonding before auth handshake. Enables bonding after successful authenticated (and before bonding command) so transmitter then can initiate bonding.
 /* Optimization or connecting problems: 
  * - pBLEScan->setInterval(100);             10-500 and > setWindow(..)
  * - pBLEScan->setWindow(99);                10-500 and < setInterval(..)
@@ -105,6 +105,58 @@ RTC_SLOW_ATTR static MQTT_Battery mqtt_battery={0};
 WiFiClient espClient;
 PubSubClient mqtt_client(espClient);
 
+static char JSONmessageBuffer[100];
+static char topic[20]={0};
+
+void SendMQTTData(){
+  MQTT_Glucose Gdata;  
+  MQTT_Battery Bdata;  
+  uint8_t i;
+
+  if (!mqtt_client.connected()) {
+    return;
+  }
+
+  if (mqtt_glucose.sync!=0) {
+    mqtt_glucose.sync=0;
+    Gdata=mqtt_glucose;
+    StaticJsonBuffer<300> JSONbuffer;
+    JsonObject& JSONencoder = JSONbuffer.createObject();
+    JSONencoder["status"] = Gdata.status;
+    JSONencoder["sequence"] = Gdata.sequence;
+    JSONencoder["timestamp"] = Gdata.timestamp;
+    JSONencoder["glucose"] = Gdata.glucose;
+    JSONencoder["glucose_f"] = (float)Gdata.glucose/18.0;
+    JSONencoder["state"] = Gdata.state;
+    JSONencoder["trend"] = Gdata.trend;
+    JSONencoder.printTo(JSONmessageBuffer, sizeof(JSONmessageBuffer));
+    strcpy(topic,"CGM/");
+    strcat(topic,transmitterID.c_str());
+    strcat(topic,"/data");
+    mqtt_client.publish(topic,JSONmessageBuffer);
+  }
+  if (mqtt_battery.sync!=0) {
+    mqtt_battery.sync=0;
+    Bdata=mqtt_battery;
+    StaticJsonBuffer<300> JSONbuffer;
+    JsonObject& JSONencoder = JSONbuffer.createObject();
+    JsonArray& OldGlucose = JSONencoder.createNestedArray("OldGlucose");
+    for (i=0;i<saveLastXValues;i++){
+      OldGlucose.add(glucoseValues[i]);
+    }
+    JsonArray& OldGlucosef = JSONencoder.createNestedArray("OldGlucose_f");
+    for (i=0;i<saveLastXValues;i++){
+      OldGlucosef.add((float)glucoseValues[i]/18.0);
+    }
+    JSONencoder.printTo(JSONmessageBuffer, sizeof(JSONmessageBuffer));
+    strcpy(topic,"CGM/");
+    strcat(topic,transmitterID.c_str());
+    strcat(topic,"/Old");
+    mqtt_client.publish(topic,JSONmessageBuffer);
+  }
+  delay(10);
+}
+
 /**
  * Callback for the connection.
  */
@@ -115,10 +167,11 @@ class MyClientCallback : public BLEClientCallbacks
      */
     void sleepHibernation()
     {
+        SendMQTTData();
         esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_SLOW_MEM, ESP_PD_OPTION_ON);                                              // Keep the RTC slow memory on to save the last glucose values and last error variable.
         esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_FAST_MEM, ESP_PD_OPTION_ON);                                              // Could be turned off in later esp chips but is on to not trigger this bug https://forum.mongoose-os.com/discussion/1628/tg0wdt-sys-reset-immediately-after-waking-from-deep-sleep
         esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
-        esp_sleep_enable_timer_wakeup(270 * 1000000);                                                                   // Sleep for 4.5 minutes.
+        esp_sleep_enable_timer_wakeup(30 * 1000000);                                                                   // Sleep for 4.5 minutes -270. //temporary 30s
         SerialPrintln(DEBUG, "Going back to hibernation sleep mode now.");
         Serial.flush();
         esp_deep_sleep_start();                                                                                         // Go to sleep.
@@ -181,6 +234,8 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks
             advertisedDevice.haveName() && advertisedDevice.getName() == ("Dexcom" + transmitterID.substr(4,2)))
         //advertisedDevice.haveName() && advertisedDevice.getName().rfind("Dexcom",0) == 0)
         {
+            SerialPrint(DEBUG, "BLE Advertised Device found: ");
+            SerialPrintln(DEBUG, advertisedDevice.toString().c_str());
             BLEDevice::getScan()->stop();                                                                               // We found our transmitter so stop scanning for now.
             myDevice = new BLEAdvertisedDevice(advertisedDevice);                                                       // Save device as new copy, myDevice also triggers a state change in main loop.
         }
@@ -371,11 +426,16 @@ void mqtt_reconnect() {
     if (mqtt_client.connect("ESP32_CGM",mqtt_user,mqtt_password)) {
       Serial.println("connected");
       // Subscribe
-      mqtt_client.subscribe("esp32/output");
+      //mqtt_client.subscribe("esp32/output");
+      //Publish
+      strcpy(topic,"CGM/");
+      strcat(topic,transmitterID.c_str());
+      strcat(topic,"/status");
+      mqtt_client.publish(topic,"{\"Status\":\"wake up\"}");
     } else {
       Serial.print("failed: Status=");
       Serial.print(mqtt_client.state());
-      Serial.println(" try again in 1 second");
+      Serial.println(" try again");
       delay(1000);
     }
   }
@@ -447,8 +507,7 @@ bool run()
     //Read current glucose level to save it.
     if(!readGlucose())
         SerialPrintln(ERROR, "Can't read Glucose!");
-    //else
-       // mqtt_client.publish("outTopic",json);
+
     // Optional: read sensor raw (unfiltered / filtered) data.
     //if(!readSensor())
         //SerialPrintln(ERROR, "Can't read raw Sensor values!");
@@ -475,48 +534,14 @@ bool run()
  */
 void loop() 
 {
-  static char JSONmessageBuffer[100];
-  static char topic[20]={0};
-  MQTT_Glucose Gdata;  
-  MQTT_Battery Bdata;  
+
 
   if (!mqtt_client.connected()) {
     mqtt_reconnect();
+    
   }
 
-  if (mqtt_glucose.sync!=0) {
-    mqtt_glucose.sync=0;
-    Gdata=mqtt_glucose;
-    StaticJsonBuffer<300> JSONbuffer;
-    JsonObject& JSONencoder = JSONbuffer.createObject();
-    JSONencoder["status"] = Gdata.status;
-    JSONencoder["sequence"] = Gdata.sequence;
-    JSONencoder["timestamp"] = Gdata.timestamp;
-    JSONencoder["glucose"] = Gdata.glucose;
-    JSONencoder["state"] = Gdata.state;
-    JSONencoder["trend"] = Gdata.trend;
-    JSONencoder.printTo(JSONmessageBuffer, sizeof(JSONmessageBuffer));
-    strcpy(topic,"CGM/");
-    strcat(topic,transmitterID.c_str());
-    strcat(topic,"/data");
-    mqtt_client.publish(topic,JSONmessageBuffer);
-  }
-  if (mqtt_battery.sync!=0) {
-    mqtt_battery.sync=0;
-    Bdata=mqtt_battery;
-    StaticJsonBuffer<300> JSONbuffer;
-    JsonObject& JSONencoder = JSONbuffer.createObject();
-    JSONencoder["status"] = Bdata.status;
-    JSONencoder["voltage_a"] = Bdata.voltage_a;
-    JSONencoder["voltage_b"] = Bdata.voltage_b;
-    JSONencoder["runtime"] = Bdata.runtime;
-    JSONencoder["temperature"] = Bdata.temperature;
-    JSONencoder.printTo(JSONmessageBuffer, sizeof(JSONmessageBuffer));
-    strcpy(topic,"CGM/");
-    strcat(topic,transmitterID.c_str());
-    strcat(topic,"/battery");
-    mqtt_client.publish(topic,JSONmessageBuffer);
-  }
+  //SendMQTTData();
   mqtt_client.loop();
   switch (Status)
   {
