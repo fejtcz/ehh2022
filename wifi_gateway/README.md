@@ -13,6 +13,8 @@ Developed in the context of my bachelor thesis at the Technical University (TU) 
 
 Actual state: buggy demo
 
+![MQTT](mqtt.png)
+
 ## Pros:
 - It can works together with Decxom app ro without it
 - The device can works with multiple transmitters
